@@ -1,6 +1,11 @@
+name: Auto Assign and Approve
+
 on:
   issues:
     types: [opened]
+  pull_request:
+    types: [opened, synchronize]
+
 jobs:
   assign:
     if: contains(github.event.issue.labels.*.name, 'md')
@@ -11,3 +16,27 @@ jobs:
       - uses: pozil/auto-assign-issue@v1
         with:
           assignees: ${{ github.actor }}
+
+  check-and-merge:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Verify Changes
+        run: |
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          for FILE in $CHANGED_FILES; do
+            if [[ "$FILE" != "docs/people/"* && "$FILE" != "docs/people/"*.md ]]; then
+              echo "Invalid file change detected in $FILE"
+              exit 1
+            fi
+          done
+
+      - name: Merge Pull Request
+        if: success()
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
