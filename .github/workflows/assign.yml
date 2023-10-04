@@ -1,10 +1,12 @@
 name: Auto Assign and Approve
 
 on:
-  issues:
-    types: [opened]
+  push:
+    branches:
+      - merge_automation_v2
   pull_request:
-    types: [opened, synchronize]
+    branches:
+      - merge_automation_v2
 
 jobs:
   assign:
